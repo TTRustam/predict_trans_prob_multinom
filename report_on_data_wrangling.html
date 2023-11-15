@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.251">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Data preparation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="report_on_data_wrangling_files/libs/clipboard/clipboard.min.js"></script>
+<script src="report_on_data_wrangling_files/libs/quarto-html/quarto.js"></script>
+<script src="report_on_data_wrangling_files/libs/quarto-html/popper.min.js"></script>
+<script src="report_on_data_wrangling_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="report_on_data_wrangling_files/libs/quarto-html/anchor.min.js"></script>
+<link href="report_on_data_wrangling_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="report_on_data_wrangling_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="report_on_data_wrangling_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="report_on_data_wrangling_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="report_on_data_wrangling_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Data preparation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<p>This report is about the preliminary data cleaning. Every step is described in details.</p>
+<p>This first code chunk reads the data and chooses columns that we initially thought we might use. <u>NOTE:</u> Not all of these columns are being used now. Initially all the files are divided into 2 folders based on their nature. We are interested in P (contains general information on individuals and health status) and <strong>r</strong> (contains death information) files.<br>
+The initial set of chosen columns is as follows:</p>
+<p>From <strong>r</strong> files:</p>
+<ul>
+<li><p>RB010 - year of study;</p></li>
+<li><p>RB060 - base weight coefficient;</p></li>
+<li><p>RB062 - weigh longitudinal 2 years;</p></li>
+<li><p>RB063 - weigh longitudinal 3 years;</p></li>
+<li><p>RB064 - weigh longitudinal 4 years;</p></li>
+<li><p>RB030 - longitudinal personal ID;</p></li>
+<li><p>RB070 - month of birth;</p></li>
+<li><p>RB080 - year of birth;</p></li>
+<li><p>RB090 - sex;</p></li>
+<li><p>RB110 - contains the data on deaths or other info on particular person;</p></li>
+<li><p>RB140 and RB150 month and year of censoring or death.</p>
+<p>From <strong>p</strong> files:</p></li>
+</ul>
+<!-- -->
+<ul>
+<li><p>PB010 - year of census;</p></li>
+<li><p>PB030 - personal ID;</p></li>
+<li><p>PB050 personal weight;</p></li>
+<li><p>PB100 - PB110 month and year of survey;</p></li>
+<li><p>PB130 - PB140 month and year of birth;</p></li>
+<li><p>PB150 - sex;</p></li>
+<li><p>PH010 - general health status from 1 to 5, 5 being very bad health. This is the variable we base the transitions on;</p></li>
+<li><p>PH020 - chronic diseases yes or no;</p></li>
+<li><p>PH030 - 6 month health restrictions yes or no.</p></li>
+</ul>
+<p><u>Code chunk 1.</u></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glue)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">"C:/Users/rusta/OneDrive/trans_prob/Data/unzipped/DATA_RAW/CSV"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># read files select columns, slightly improve names</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>read_data <span class="ot">&lt;-</span> <span class="cf">function</span>(x, y) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">pattern =</span> x)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(files,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      read_csv,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">col_select =</span> <span class="fu">any_of</span>(y)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_names</span>(<span class="fu">str_sub</span>(files, <span class="at">start =</span> <span class="dv">3</span>, <span class="at">end =</span> <span class="dv">5</span>))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co"># columns to select from 2 file types</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>name_vec <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"RB010"</span>, <span class="st">"RB060"</span>, <span class="st">"RB062"</span>, <span class="st">"RB063"</span>, <span class="st">"RB064"</span>, <span class="st">"RB030"</span>, <span class="st">"RB070"</span>, <span class="st">"RB080"</span>, <span class="st">"RB090"</span>, <span class="st">"RB110"</span>, <span class="st">"RB140"</span>, <span class="st">"RB150"</span>, <span class="st">"PB010"</span>, <span class="st">"PB030"</span>, <span class="st">"PB050"</span>, <span class="st">"PB110"</span>, <span class="st">"PB100"</span>, <span class="st">"PB130"</span>, <span class="st">"PB140"</span>, <span class="st">"PB150"</span>, <span class="st">"PH010"</span>, <span class="st">"PH020"</span>, <span class="st">"PH030"</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co"># read data</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>pt1 <span class="ot">&lt;-</span> <span class="fu">read_data</span>(<span class="at">x =</span> <span class="st">".*r.csv"</span>, <span class="at">y =</span> name_vec)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>pt2 <span class="ot">&lt;-</span> <span class="fu">read_data</span>(<span class="at">x =</span> <span class="st">".*p.csv"</span>, <span class="at">y =</span> name_vec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next we have to do a lot of data wrangling<br>
+This big function does all the data wrangling and binding. Basically returning a ready to use product.<br>
+Here we use some data wrangling routines and assumptions. In addition we have to remember that first 2 years do not have sufficient data points because the years count have just started.<br>
+1) I create an id variable, based o this variable I track people thought the subsequent files. In each file I filter the first available year. I do this because I noticed that the weights in the first year in every file roughly correspond to that of the Spanish population, while it is not true for all other years. It is likely doe to the fact, that the first year has the data from only 1 cohort, while all others can have data from 2 or 3 independent cohorts. Each file has data on 3 years.<br>
+Here is quick illustration:</p>
+<p>You can see that the sum of weights for each first year in the files are roughly the same and are around 38 millions, which is like 80% of the real Spanish population.</p>
+<p><u>Code chunk 2.</u></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>pt2 <span class="sc">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010))) <span class="sc">%&gt;%</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PB010) <span class="sc">%&gt;%</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(PB050)) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB010 </th>
+   <th style="text-align:right;"> n </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2004 </td>
+   <td style="text-align:right;"> 35704888 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 36351436 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 36917490 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2007 </td>
+   <td style="text-align:right;"> 37570914 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 38224452 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 38589335 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 38724976 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 38808754 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2012 </td>
+   <td style="text-align:right;"> 38852661 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2013 </td>
+   <td style="text-align:right;"> 38733223 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 38483585 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2015 </td>
+   <td style="text-align:right;"> 38517183 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2016 </td>
+   <td style="text-align:right;"> 38491855 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2017 </td>
+   <td style="text-align:right;"> 38608004 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>For illustration lets check what will happen if I choose not the first but the second or third or forth years. We can see that the value growth in the second year and then in the third while remaining stable in the fourth, indicating that there are the data from different independent cohorts in the sample, due to the fact that they have rolling design: e.g.&nbsp;every year they add 25% from the new sample while removing 25% of the old sample.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># second</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>pt2 <span class="sc">%&gt;%</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010) <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PB010) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(PB050)) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB010 </th>
+   <th style="text-align:right;"> n </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 72087159 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 73313787 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2007 </td>
+   <td style="text-align:right;"> 74525210 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 75825237 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 76848568 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 77347486 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 77549800 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2012 </td>
+   <td style="text-align:right;"> 77665391 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2013 </td>
+   <td style="text-align:right;"> 77612327 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 77238759 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2015 </td>
+   <td style="text-align:right;"> 77075790 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2016 </td>
+   <td style="text-align:right;"> 76994574 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2017 </td>
+   <td style="text-align:right;"> 77131126 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 77391342 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># third</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>pt2 <span class="sc">%&gt;%</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010) <span class="sc">+</span> <span class="dv">2</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PB010) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(PB050)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB010 </th>
+   <th style="text-align:right;"> n </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 109102704 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2007 </td>
+   <td style="text-align:right;"> 110966323 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 112816207 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 114490046 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 115648258 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 116199507 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2012 </td>
+   <td style="text-align:right;"> 116422003 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2013 </td>
+   <td style="text-align:right;"> 116449822 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 116148384 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2015 </td>
+   <td style="text-align:right;"> 115850104 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2016 </td>
+   <td style="text-align:right;"> 115580327 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2017 </td>
+   <td style="text-align:right;"> 115659318 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 115940000 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2019 </td>
+   <td style="text-align:right;"> 116536693 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fourth</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pt2 <span class="sc">%&gt;%</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010) <span class="sc">+</span> <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PB010) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(PB050)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB010 </th>
+   <th style="text-align:right;"> n </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2007 </td>
+   <td style="text-align:right;"> 109223801 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 111063616 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 112925696 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 114598627 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 115713597 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2012 </td>
+   <td style="text-align:right;"> 116232338 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2013 </td>
+   <td style="text-align:right;"> 116495912 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 116530369 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2015 </td>
+   <td style="text-align:right;"> 116262989 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2016 </td>
+   <td style="text-align:right;"> 115890989 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2017 </td>
+   <td style="text-align:right;"> 115661710 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 115712093 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2019 </td>
+   <td style="text-align:right;"> 116000751 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2020 </td>
+   <td style="text-align:right;"> 116583559 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Upon doing so I keep only the file that stars with the minimum value of <strong><em>a -</em></strong> the function only argument and based on this file I identify the individuals. Unfortunately the identification variable does not grants the unambiguous id, since they can immediately replace one leaving person with id 1 with another one with exactly the same Id, so I have to use the combination of id, sex, birth year and month to identify the individuals. This is the only way I can be more or less sure that I made no mistake.</p>
+<p>Example for the year 2008</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>pt2 <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010)) <span class="sc">%&gt;%</span> <span class="co"># we can identify people from the first year of observation</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">count</span>(PB010, PB030, PB140, PB130, PB150) <span class="sc">%&gt;%</span> <span class="co"># keeping identification columns</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>n)) <span class="sc">%&gt;%</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> <span class="fu">min</span>(.x<span class="sc">$</span>PB010) <span class="sc">==</span> <span class="dv">2008</span>) <span class="sc">%&gt;%</span> <span class="co"># keep just one file with the lowest year == a</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB030 </th>
+   <th style="text-align:right;"> PB140 </th>
+   <th style="text-align:right;"> PB130 </th>
+   <th style="text-align:right;"> PB150 </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 360150001 </td>
+   <td style="text-align:right;"> 1931 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 360150002 </td>
+   <td style="text-align:right;"> 1933 </td>
+   <td style="text-align:right;"> 12 </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 360160001 </td>
+   <td style="text-align:right;"> 1932 </td>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 360180001 </td>
+   <td style="text-align:right;"> 1961 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 360180002 </td>
+   <td style="text-align:right;"> 1961 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 360180003 </td>
+   <td style="text-align:right;"> 1986 </td>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Then I simply choose the people from the general file that match the id characteristics with inner_join. Still this does not guarantees us the unique identification, and sometimes there is one or two exact matches but in a completely off time. We know that the individuals are followed for 3 years maximum and everything that is before or beyond this is a mismatch, so i use c(((2008 %% 1000) + 1):((2008 %% 1000) + 3)) (example for 2008) to find people from the adjustment subsequent 3 cohorts only, sine I chose the minimum year. Since we have many files that cover exactly the same period there will be duplicates so I simply use the distinct to remove them.</p>
+<p>All good in weights</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>id <span class="ot">&lt;-</span> pt2 <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010)) <span class="sc">%&gt;%</span> <span class="co"># we can identify people from the first year of observation</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">count</span>(PB010, PB030, PB140, PB130, PB150) <span class="sc">%&gt;%</span> <span class="co"># keeping identification columns</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>n)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> <span class="fu">min</span>(.x<span class="sc">$</span>PB010) <span class="sc">==</span> <span class="dv">2008</span>) <span class="sc">%&gt;%</span> <span class="co"># keep just one file with the lowest year == a</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>health <span class="ot">&lt;-</span> pt2 <span class="sc">%&gt;%</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(PB010, PB100, PB030, PB150, PB050, PH010, PB140, PB130) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">inner_join</span>(id)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"cohort"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cohort =</span> <span class="fu">parse_number</span>(cohort)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(cohort <span class="sc">%in%</span> <span class="fu">c</span>(((<span class="dv">2008</span> <span class="sc">%%</span> <span class="dv">1000</span>) <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>((<span class="dv">2008</span> <span class="sc">%%</span> <span class="dv">1000</span>) <span class="sc">+</span> <span class="dv">3</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>cohort) <span class="sc">%&gt;%</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PB050 =</span> <span class="fu">round</span>(PB050)) <span class="sc">%&gt;%</span> <span class="do">### this one was important. floating error</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() </span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>health <span class="sc">%&gt;%</span> </span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PB010) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(PB050)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> PB010 </th>
+   <th style="text-align:right;"> n </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 38224450 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 37048597 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 36268193 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 35671935 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Now, after identifying the individuals we can proceed with the data cleaning.</p>
+<ul>
+<li><p>Just in case filter only years more than 2008 (illustrative example)</p></li>
+<li><p>If the info on the month of survey is missing but the data on month of birth is present I put the month of birth</p></li>
+<li><p>If the info on birth is missing but survey month p[resent input survey month</p></li>
+<li><p>If both missing impute January</p></li>
+<li><p>Rename columns for convenience</p></li>
+<li><p>Transform health states 1:3 - to healthy (Muy bueno, Bueno, Regular)<br>
+4:5 - not healthy (malo, muy malo)</p></li>
+<li><p>Combine and Convert month and years to my() format</p></li>
+<li><p>Calculate age in years with lubridate as interval(m_y_birth, m_y_survey) / years(1)</p></li>
+<li><p>Round age to complete years lived.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>health1 <span class="ot">&lt;-</span> health <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># just in case</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(PB010 <span class="sc">&gt;</span> <span class="dv">2008</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># month inmputation part. basically uniform</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for survey month data</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PB100 =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(PB100) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(PB130), PB130, PB100)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for birth month data</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PB130 =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(PB130) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(PB100), PB100, PB130)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># is bith are missing</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(PB100, PB130), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(.), <span class="dv">1</span>, .))) <span class="sc">%&gt;%</span>  </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># give columns a name that makes sence </span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"y"</span>, <span class="st">"m"</span>, <span class="st">"id"</span>, <span class="st">"sex"</span>, <span class="st">"w"</span>, <span class="st">"health"</span>, <span class="st">"b_y"</span>, <span class="st">"b_m"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># dichotomize the health outcome</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">health =</span> <span class="fu">case_when</span>(</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    health <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) <span class="sc">~</span> <span class="st">"H"</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    health <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">~</span> <span class="st">"NH"</span>,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># combine month and year into date column for survey</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_survey"</span>,  <span class="fu">c</span>(m, y), <span class="at">sep =</span> <span class="st">"-"</span>, <span class="at">remove =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same for birth date</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_birth"</span>,   <span class="fu">c</span>(b_m, b_y), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># transform to age format</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(m_y_survey, m_y_birth), <span class="sc">~</span> <span class="fu">my</span>(.))) <span class="sc">%&gt;%</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate age in years</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">interval</span>(m_y_birth, m_y_survey) <span class="sc">/</span> <span class="fu">years</span>(<span class="dv">1</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove unnecessary columns</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(m_y_survey, m)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make age integer</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">floor</span>(age))</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>health1 <span class="sc">%&gt;%</span> </span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:right;"> w </th>
+   <th style="text-align:left;"> health </th>
+   <th style="text-align:left;"> m_y_birth </th>
+   <th style="text-align:right;"> age </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360150001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 5415 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1931-01-01 </td>
+   <td style="text-align:right;"> 78 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360150002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 5207 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1933-12-01 </td>
+   <td style="text-align:right;"> 75 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360200001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 2091 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1944-12-01 </td>
+   <td style="text-align:right;"> 64 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360200002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 2198 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1949-05-01 </td>
+   <td style="text-align:right;"> 60 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360220001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 3189 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1960-07-01 </td>
+   <td style="text-align:right;"> 48 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360220002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 2942 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 1965-07-01 </td>
+   <td style="text-align:right;"> 43 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Why imputation is so complicated. Well, basically to avoid the bias. If any of the month data is present we replace the second missing value with it. Thus, we guarantee the complete year and do not jump forward or backward in years. If both missing we just use beginning of the year guaranteeing the logic.</p>
+<p>Now the same procedure should be implemented with the files containing deaths. We keep only people with RB110 == 6 (Situación de la persona en el hogar = Fallecio) then find the corresponding ids from the previous step unite month and year convert to format and calculate age. NOTE: this file has way less missing data but still has some, so I use the same procedure for imputation just in case</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dead <span class="ot">&lt;-</span>  pt1 <span class="sc">%&gt;%</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(RB110 <span class="sc">==</span> <span class="dv">6</span>) <span class="sc">%&gt;%</span> <span class="co"># keep only deaths</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(RB010, RB030, RB070, RB080, RB060, RB090, RB110, RB140,  RB150) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">inner_join</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">set_names</span>(id, <span class="fu">c</span>(<span class="st">"RB030"</span>, <span class="st">"RB080"</span>, <span class="st">"RB070"</span>, <span class="st">"RB090"</span>)))) <span class="sc">%&gt;%</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>dead1 <span class="ot">&lt;-</span> dead <span class="sc">%&gt;%</span> </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># rename</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"y"</span>, <span class="st">"id"</span>, <span class="st">"b_m"</span>, <span class="st">"b_y"</span>, <span class="st">"w"</span>, </span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>              <span class="st">"sex"</span>, <span class="st">"health"</span>, <span class="st">"m_d"</span>, <span class="st">"y_d"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># choose columns</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(y, id, b_m, b_y, sex, health, m_d, y_d) <span class="sc">%&gt;%</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create date of birth</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_birth"</span>,   <span class="fu">c</span>(b_m, b_y), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create date of death</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_d_or_tr"</span>, <span class="fu">c</span>(m_d, y_d), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># transform to date format</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(m_y_birth, m_y_d_or_tr), <span class="sc">~</span> <span class="fu">my</span>(.))) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate age</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">interval</span>(m_y_birth, m_y_d_or_tr) <span class="sc">/</span> <span class="fu">years</span>(<span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>m_y_d_or_tr, health) <span class="sc">%&gt;%</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create the leath state = Death column</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">health =</span> <span class="st">"D"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make integer ages</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">floor</span>(age))</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>dead1 <span class="sc">%&gt;%</span> </span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:left;"> m_y_birth </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:left;"> health </th>
+   <th style="text-align:right;"> age </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 360950001 </td>
+   <td style="text-align:left;"> 1924-07-01 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 84 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 361100001 </td>
+   <td style="text-align:left;"> 1928-05-01 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 80 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 363320002 </td>
+   <td style="text-align:left;"> 1935-08-01 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 73 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 373530002 </td>
+   <td style="text-align:left;"> 1928-07-01 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 80 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 376930002 </td>
+   <td style="text-align:left;"> 1945-04-01 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 63 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 377900001 </td>
+   <td style="text-align:left;"> 1926-01-01 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> D </td>
+   <td style="text-align:right;"> 83 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Now I join two data sets and:</p>
+<ol type="1">
+<li><p>Keep only people for which the transitions can be calculated that is if the person is seen in data at least 2 times, 25% of data a re crossectional</p></li>
+<li><p>If the health is missing i replace it with the closest value up or down</p></li>
+<li><p>Arrange by age for each individual to grant subsequent observation, use lead() and if the from is D to is D to remove data with missing from states and also with missing weight (these are transition form D to D)</p></li>
+<li><p>If to is missing but from is present impute from</p></li>
+<li><p>Create variable period (irrelevant just for my comfort say 2006-2006 - a transition between these 2 time points)</p></li>
+<li><p>And finally we filter only inner 2 transitions. That is if the data has transitions for 2004 2005 2005 2007, the transitions will be 2004-2005 2005-2006 2006-2007 2007-. The last should obviously be removed, the first one too (don`t remember why, I think there is something with the data completeness).</p>
+<p>This is it. we have the raw data.</p></li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> health1 <span class="sc">%&gt;%</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># join two datasets</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(dead1) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>m_y_birth)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>new <span class="ot">&lt;-</span> dt <span class="sc">%&gt;%</span> </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(sex, id) <span class="sc">%&gt;%</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># arrange by age</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(age) <span class="sc">%&gt;%</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># imput time t + 1 as time t if missing</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(health, <span class="at">.direction =</span> <span class="st">"down"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do vice versa </span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(health, <span class="at">.direction =</span> <span class="st">"up"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># now create to and from states </span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for each ID</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># arrange by are</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(age) <span class="sc">%&gt;%</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create fom variable</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">from =</span> health) <span class="sc">%&gt;%</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create to variable with lead</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to   =</span> <span class="fu">lead</span>(from)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># final imputation</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to =</span> <span class="fu">ifelse</span>(from <span class="sc">==</span> <span class="st">"D"</span>, <span class="st">"D"</span>, to)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove the people for which we know nothing</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(from)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(w)) <span class="sc">%&gt;%</span> <span class="co"># remove transitions from D to D</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(to) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(from), from, to)) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(w <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create period variable</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">period =</span> <span class="fu">glue</span>(<span class="st">"{y}-{y+1}"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter only inner 2 transitions</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(period, <span class="fu">as.character</span>(<span class="dv">2008</span> <span class="sc">+</span> <span class="dv">2</span>))) <span class="sc">%&gt;%</span> <span class="co"># this is to keep only inner 2 transitions</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>n)</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>new <span class="sc">%&gt;%</span> </span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:right;"> w </th>
+   <th style="text-align:left;"> from </th>
+   <th style="text-align:right;"> age </th>
+   <th style="text-align:left;"> to </th>
+   <th style="text-align:left;"> period </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 361500003 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 4407 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 363540005 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 4895 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 363620003 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 2163 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 365000004 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 22618 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 365480003 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 11244 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 367660003 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 4643 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 17 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2009-2010 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p><br>
+Here is the function that simply does all the steps together, but for all cohorts rather than just 2008.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>create_data_from_the_chosen_cohort <span class="ot">&lt;-</span> <span class="cf">function</span>(a) { </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># so technically 2006 to 2017 but we can start with 2004</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  id <span class="ot">&lt;-</span> pt2 <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">filter</span>(PB010 <span class="sc">==</span> <span class="fu">min</span>(PB010)) <span class="sc">%&gt;%</span> <span class="co"># we can identify people from the first year of observation</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>          <span class="fu">count</span>(PB010, PB030, PB140, PB130, PB150) <span class="sc">%&gt;%</span> <span class="co"># keeping identification columns</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>          dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>n)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">keep</span>(<span class="sc">~</span> <span class="fu">min</span>(.x<span class="sc">$</span>PB010) <span class="sc">==</span> a) <span class="sc">%&gt;%</span> <span class="co"># keep just one file with the lowest year == a</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># strange that very low weight</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  health <span class="ot">&lt;-</span>  pt2 <span class="sc">%&gt;%</span> </span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>          dplyr<span class="sc">::</span><span class="fu">select</span>(PB010, PB100, PB030, PB150, PB050, PH010, PB140, PB130) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>          <span class="fu">inner_join</span>(id)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"cohort"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">cohort =</span> <span class="fu">parse_number</span>(cohort)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(cohort <span class="sc">%in%</span> <span class="fu">c</span>(((a <span class="sc">%%</span> <span class="dv">1000</span>) <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>((a <span class="sc">%%</span> <span class="dv">1000</span>) <span class="sc">+</span> <span class="dv">3</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>cohort) <span class="sc">%&gt;%</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">PB050 =</span> <span class="fu">round</span>(PB050)) <span class="sc">%&gt;%</span> <span class="do">### this one was important. floating error</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">distinct</span>()</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>health1 <span class="ot">&lt;-</span> health <span class="sc">%&gt;%</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># just in case</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(PB010 <span class="sc">&gt;</span> a) <span class="sc">%&gt;%</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># month inmputation part. basically uniform</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for survey month data</span></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PB100 =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(PB100) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(PB130), PB130, PB100)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for birth month data</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PB130 =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(PB130) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(PB100), PB100, PB130)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># is bith are missing</span></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(PB100, PB130), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(.), <span class="dv">1</span>, .))) <span class="sc">%&gt;%</span>  </span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># give columns a name that makes sence </span></span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"y"</span>, <span class="st">"m"</span>, <span class="st">"id"</span>, <span class="st">"sex"</span>, <span class="st">"w"</span>, <span class="st">"health"</span>, <span class="st">"b_y"</span>, <span class="st">"b_m"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># dichotomize the health outcome</span></span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">health =</span> <span class="fu">case_when</span>(</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>    health <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) <span class="sc">~</span> <span class="st">"H"</span>,</span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>    health <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">~</span> <span class="st">"NH"</span>,</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>  <span class="co"># combine month and year into date column for survey</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_survey"</span>,  <span class="fu">c</span>(m, y), <span class="at">sep =</span> <span class="st">"-"</span>, <span class="at">remove =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same for birth date</span></span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_birth"</span>,   <span class="fu">c</span>(b_m, b_y), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>  <span class="co"># transform to age format</span></span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(m_y_survey, m_y_birth), <span class="sc">~</span> <span class="fu">my</span>(.))) <span class="sc">%&gt;%</span></span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate age in years</span></span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">interval</span>(m_y_birth, m_y_survey) <span class="sc">/</span> <span class="fu">years</span>(<span class="dv">1</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove unnecessary columns</span></span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(m_y_survey, m)) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make age integer</span></span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">floor</span>(age))</span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Deaths</span></span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a><span class="co"># ----------------------------------------------------------------- #</span></span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>dead <span class="ot">&lt;-</span>  pt1 <span class="sc">%&gt;%</span> </span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(RB110 <span class="sc">==</span> <span class="dv">6</span>) <span class="sc">%&gt;%</span> <span class="co"># keep only deaths</span></span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(RB010, RB030, RB070, RB080, RB060, RB090, RB110, RB140,  RB150) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-61"><a href="#cb11-61" aria-hidden="true" tabindex="-1"></a>        <span class="fu">inner_join</span>(</span>
+<span id="cb11-62"><a href="#cb11-62" aria-hidden="true" tabindex="-1"></a>          <span class="fu">set_names</span>(id, <span class="fu">c</span>(<span class="st">"RB030"</span>, <span class="st">"RB080"</span>, <span class="st">"RB070"</span>, <span class="st">"RB090"</span>)))) <span class="sc">%&gt;%</span></span>
+<span id="cb11-63"><a href="#cb11-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb11-64"><a href="#cb11-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb11-65"><a href="#cb11-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-66"><a href="#cb11-66" aria-hidden="true" tabindex="-1"></a>dead1 <span class="ot">&lt;-</span> dead <span class="sc">%&gt;%</span> </span>
+<span id="cb11-67"><a href="#cb11-67" aria-hidden="true" tabindex="-1"></a>  <span class="co"># rename</span></span>
+<span id="cb11-68"><a href="#cb11-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"y"</span>, <span class="st">"id"</span>, <span class="st">"b_m"</span>, <span class="st">"b_y"</span>, <span class="st">"w"</span>, </span>
+<span id="cb11-69"><a href="#cb11-69" aria-hidden="true" tabindex="-1"></a>              <span class="st">"sex"</span>, <span class="st">"health"</span>, <span class="st">"m_d"</span>, <span class="st">"y_d"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-70"><a href="#cb11-70" aria-hidden="true" tabindex="-1"></a>  <span class="co"># choose columns</span></span>
+<span id="cb11-71"><a href="#cb11-71" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(y, id, b_m, b_y, sex, health, m_d, y_d) <span class="sc">%&gt;%</span></span>
+<span id="cb11-72"><a href="#cb11-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create date of birth</span></span>
+<span id="cb11-73"><a href="#cb11-73" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_birth"</span>,   <span class="fu">c</span>(b_m, b_y), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-74"><a href="#cb11-74" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create date of death</span></span>
+<span id="cb11-75"><a href="#cb11-75" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(<span class="st">"m_y_d_or_tr"</span>, <span class="fu">c</span>(m_d, y_d), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-76"><a href="#cb11-76" aria-hidden="true" tabindex="-1"></a>  <span class="co"># transform to date format</span></span>
+<span id="cb11-77"><a href="#cb11-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(m_y_birth, m_y_d_or_tr), <span class="sc">~</span> <span class="fu">my</span>(.))) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-78"><a href="#cb11-78" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate age</span></span>
+<span id="cb11-79"><a href="#cb11-79" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">interval</span>(m_y_birth, m_y_d_or_tr) <span class="sc">/</span> <span class="fu">years</span>(<span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-80"><a href="#cb11-80" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>m_y_d_or_tr, health) <span class="sc">%&gt;%</span></span>
+<span id="cb11-81"><a href="#cb11-81" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create the leath state = Death column</span></span>
+<span id="cb11-82"><a href="#cb11-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">health =</span> <span class="st">"D"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-83"><a href="#cb11-83" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make integer ages</span></span>
+<span id="cb11-84"><a href="#cb11-84" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">floor</span>(age))</span>
+<span id="cb11-85"><a href="#cb11-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-86"><a href="#cb11-86" aria-hidden="true" tabindex="-1"></a><span class="co"># ----------------------------------------------------------------- #</span></span>
+<span id="cb11-87"><a href="#cb11-87" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> health1 <span class="sc">%&gt;%</span> </span>
+<span id="cb11-88"><a href="#cb11-88" aria-hidden="true" tabindex="-1"></a>  <span class="co"># join two datasets</span></span>
+<span id="cb11-89"><a href="#cb11-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(dead1) <span class="sc">%&gt;%</span></span>
+<span id="cb11-90"><a href="#cb11-90" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>m_y_birth)</span>
+<span id="cb11-91"><a href="#cb11-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-92"><a href="#cb11-92" aria-hidden="true" tabindex="-1"></a>new <span class="ot">&lt;-</span> dt <span class="sc">%&gt;%</span> </span>
+<span id="cb11-93"><a href="#cb11-93" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-94"><a href="#cb11-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-95"><a href="#cb11-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb11-96"><a href="#cb11-96" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-97"><a href="#cb11-97" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(sex, id) <span class="sc">%&gt;%</span></span>
+<span id="cb11-98"><a href="#cb11-98" aria-hidden="true" tabindex="-1"></a>  <span class="co"># arrange by age</span></span>
+<span id="cb11-99"><a href="#cb11-99" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(age) <span class="sc">%&gt;%</span></span>
+<span id="cb11-100"><a href="#cb11-100" aria-hidden="true" tabindex="-1"></a>  <span class="co"># imput time t + 1 as time t if missing</span></span>
+<span id="cb11-101"><a href="#cb11-101" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(health, <span class="at">.direction =</span> <span class="st">"down"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-102"><a href="#cb11-102" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do vice versa </span></span>
+<span id="cb11-103"><a href="#cb11-103" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(health, <span class="at">.direction =</span> <span class="st">"up"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-104"><a href="#cb11-104" aria-hidden="true" tabindex="-1"></a>  <span class="co"># now create to and from states </span></span>
+<span id="cb11-105"><a href="#cb11-105" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for each ID</span></span>
+<span id="cb11-106"><a href="#cb11-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-107"><a href="#cb11-107" aria-hidden="true" tabindex="-1"></a>  <span class="co"># arrange by are</span></span>
+<span id="cb11-108"><a href="#cb11-108" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(age) <span class="sc">%&gt;%</span></span>
+<span id="cb11-109"><a href="#cb11-109" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create fom variable</span></span>
+<span id="cb11-110"><a href="#cb11-110" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">from =</span> health) <span class="sc">%&gt;%</span></span>
+<span id="cb11-111"><a href="#cb11-111" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create to variable with lead</span></span>
+<span id="cb11-112"><a href="#cb11-112" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to   =</span> <span class="fu">lead</span>(from)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-113"><a href="#cb11-113" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb11-114"><a href="#cb11-114" aria-hidden="true" tabindex="-1"></a>  <span class="co"># final imputation</span></span>
+<span id="cb11-115"><a href="#cb11-115" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to =</span> <span class="fu">ifelse</span>(from <span class="sc">==</span> <span class="st">"D"</span>, <span class="st">"D"</span>, to)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-116"><a href="#cb11-116" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove the people for which we know nothing</span></span>
+<span id="cb11-117"><a href="#cb11-117" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(from)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-118"><a href="#cb11-118" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(w)) <span class="sc">%&gt;%</span> <span class="co"># remove transitions from D to D</span></span>
+<span id="cb11-119"><a href="#cb11-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">to =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(to) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(from), from, to)) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-120"><a href="#cb11-120" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(w <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-121"><a href="#cb11-121" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create period variable</span></span>
+<span id="cb11-122"><a href="#cb11-122" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">period =</span> <span class="fu">glue</span>(<span class="st">"{y}-{y+1}"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-123"><a href="#cb11-123" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter only inner 2 transitions</span></span>
+<span id="cb11-124"><a href="#cb11-124" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(period, <span class="fu">as.character</span>(a <span class="sc">+</span> <span class="dv">2</span>))) <span class="sc">%&gt;%</span> <span class="co"># this is to keep only inner 2 transitions</span></span>
+<span id="cb11-125"><a href="#cb11-125" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>n)</span>
+<span id="cb11-126"><a href="#cb11-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-127"><a href="#cb11-127" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span>(new)</span>
+<span id="cb11-128"><a href="#cb11-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-129"><a href="#cb11-129" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This code chunk simply applies this function to every cohort.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2004</span><span class="sc">:</span><span class="dv">2017</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>x     <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="at">mode =</span> <span class="st">"list"</span>, <span class="at">length =</span> <span class="fu">length</span>(years)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="fu">str_c</span>(<span class="st">'y'</span>,  <span class="dv">2004</span><span class="sc">:</span><span class="dv">2017</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) { </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  x[[i]] <span class="ot">&lt;-</span> <span class="fu">create_data_from_the_chosen_cohort</span>(<span class="at">a =</span> years[i])</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Finally let me illustrate some examples of how they reassign id`s.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"cohort"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(id <span class="sc">==</span> <span class="dv">33210001</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> cohort </th>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:right;"> w </th>
+   <th style="text-align:left;"> from </th>
+   <th style="text-align:right;"> age </th>
+   <th style="text-align:left;"> to </th>
+   <th style="text-align:left;"> period </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1657 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 48 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2005-2006 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1802 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 49 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2006-2007 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2009 </td>
+   <td style="text-align:right;"> 2010 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 6607 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 35 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2010-2011 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2009 </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 7668 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 36 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2011-2012 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1363 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 43 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2018-2019 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1364 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 43 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2018-2019 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2019 </td>
+   <td style="text-align:right;"> 33210001 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1151 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 44 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2019-2020 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Another one.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">%&gt;%</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"cohort"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(id <span class="sc">==</span> <span class="dv">71670002</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> cohort </th>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:right;"> w </th>
+   <th style="text-align:left;"> from </th>
+   <th style="text-align:right;"> age </th>
+   <th style="text-align:left;"> to </th>
+   <th style="text-align:left;"> period </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 11530 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 49 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2005-2006 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 15649 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 50 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2006-2007 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2013 </td>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 9216 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 22 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2014-2015 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2013 </td>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 9217 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 22 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2014-2015 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2013 </td>
+   <td style="text-align:right;"> 2015 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 11216 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 23 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2015-2016 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 2284 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 52 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2018-2019 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2019 </td>
+   <td style="text-align:right;"> 71670002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 3243 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 53 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2019-2020 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>And another one. This is why we need a combination of variables to unambiguously chose individuals.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"cohort"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(id <span class="sc">==</span> <span class="dv">2190002</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> cohort </th>
+   <th style="text-align:right;"> y </th>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:right;"> sex </th>
+   <th style="text-align:right;"> w </th>
+   <th style="text-align:left;"> from </th>
+   <th style="text-align:right;"> age </th>
+   <th style="text-align:left;"> to </th>
+   <th style="text-align:left;"> period </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 3084 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 37 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2005-2006 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2004 </td>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 3549 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 38 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2006-2007 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2012 </td>
+   <td style="text-align:right;"> 2013 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 8335 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 41 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2013-2014 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2012 </td>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 8748 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 42 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2014-2015 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2012 </td>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 8749 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 42 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2014-2015 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2018 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 7528 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 52 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2018-2019 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> y2017 </td>
+   <td style="text-align:right;"> 2019 </td>
+   <td style="text-align:right;"> 2190002 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 7722 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:right;"> 53 </td>
+   <td style="text-align:left;"> H </td>
+   <td style="text-align:left;"> 2019-2020 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Next file will start from this point and will include the calculations themselves.</p>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

@@ -1,0 +1,522 @@
+---
+title: "Data preparation"
+format: html
+editor: visual
+---
+
+This report is about the preliminary data cleaning. Every step is described in details.
+
+This first code chunk reads the data and chooses columns that we initially thought we might use. [NOTE:]{.underline} Not all of these columns are being used now. Initially all the files are divided into 2 folders based on their nature. We are interested in P (contains general information on individuals and health status) and **r** (contains death information) files.\
+The initial set of chosen columns is as follows:
+
+From **r** files:
+
+-   RB010 - year of study;
+
+-   RB060 - base weight coefficient;
+
+-   RB062 - weigh longitudinal 2 years;
+
+-   RB063 - weigh longitudinal 3 years;
+
+-   RB064 - weigh longitudinal 4 years;
+
+-   RB030 - longitudinal personal ID;
+
+-   RB070 - month of birth;
+
+-   RB080 - year of birth;
+
+-   RB090 - sex;
+
+-   RB110 - contains the data on deaths or other info on particular person;
+
+-   RB140 and RB150 month and year of censoring or death.
+
+    From **p** files:
+
+<!-- -->
+
+-   PB010 - year of census;
+
+-   PB030 - personal ID;
+
+-   PB050 personal weight;
+
+-   PB100 - PB110 month and year of survey;
+
+-   PB130 - PB140 month and year of birth;
+
+-   PB150 - sex;
+
+-   PH010 - general health status from 1 to 5, 5 being very bad health. This is the variable we base the transitions on;
+
+-   PH020 - chronic diseases yes or no;
+
+-   PH030 - 6 month health restrictions yes or no.
+
+[Code chunk 1.]{.underline}
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(janitor)
+library(glue)
+library(kableExtra)
+setwd("C:/Users/rusta/OneDrive/trans_prob/Data/unzipped/DATA_RAW/CSV")
+# read files select columns, slightly improve names
+read_data <- function(x, y) {
+  
+  files <- list.files(pattern = x)
+  
+  map(files,
+      read_csv,
+      col_select = any_of(y)) %>%
+    set_names(str_sub(files, start = 3, end = 5))
+  
+}
+
+# columns to select from 2 file types
+name_vec <- c("RB010", "RB060", "RB062", "RB063", "RB064", "RB030", "RB070", "RB080", "RB090", "RB110", "RB140", "RB150", "PB010", "PB030", "PB050", "PB110", "PB100", "PB130", "PB140", "PB150", "PH010", "PH020", "PH030")
+
+# read data
+pt1 <- read_data(x = ".*r.csv", y = name_vec)
+pt2 <- read_data(x = ".*p.csv", y = name_vec)
+```
+
+Next we have to do a lot of data wrangling\
+This big function does all the data wrangling and binding. Basically returning a ready to use product.\
+Here we use some data wrangling routines and assumptions. In addition we have to remember that first 2 years do not have sufficient data points because the years count have just started.\
+1) I create an id variable, based o this variable I track people thought the subsequent files. In each file I filter the first available year. I do this because I noticed that the weights in the first year in every file roughly correspond to that of the Spanish population, while it is not true for all other years. It is likely doe to the fact, that the first year has the data from only 1 cohort, while all others can have data from 2 or 3 independent cohorts. Each file has data on 3 years.\
+Here is quick illustration:
+
+You can see that the sum of weights for each first year in the files are roughly the same and are around 38 millions, which is like 80% of the real Spanish population.
+
+[Code chunk 2.]{.underline}
+
+```{r, message = FALSE, warning = FALSE}
+pt2 %>%
+  map(~ .x %>%
+        filter(PB010 == min(PB010))) %>%
+  bind_rows() %>%
+  group_by(PB010) %>%
+  summarise(n = sum(PB050)) %>% 
+  kable()
+```
+
+For illustration lets check what will happen if I choose not the first but the second or third or forth years. We can see that the value growth in the second year and then in the third while remaining stable in the fourth, indicating that there are the data from different independent cohorts in the sample, due to the fact that they have rolling design: e.g. every year they add 25% from the new sample while removing 25% of the old sample.
+
+```{r, message = FALSE, warning = FALSE}
+# second
+pt2 %>% 
+  map(~ .x %>%
+        filter(PB010 == min(PB010) + 1)) %>% 
+  bind_rows() %>% 
+  group_by(PB010) %>% 
+  summarise(n = sum(PB050)) %>% 
+  kable()
+
+# third
+pt2 %>% 
+  map(~ .x %>%
+        filter(PB010 == min(PB010) + 2)) %>% 
+  bind_rows() %>% 
+  group_by(PB010) %>% 
+  summarise(n = sum(PB050)) %>% 
+  kable()
+
+# fourth
+pt2 %>% 
+  map(~ .x %>%
+        filter(PB010 == min(PB010) + 3)) %>% 
+  bind_rows() %>% 
+  group_by(PB010) %>% 
+  summarise(n = sum(PB050)) %>% 
+  kable()
+
+```
+
+Upon doing so I keep only the file that stars with the minimum value of ***a -*** the function only argument and based on this file I identify the individuals. Unfortunately the identification variable does not grants the unambiguous id, since they can immediately replace one leaving person with id 1 with another one with exactly the same Id, so I have to use the combination of id, sex, birth year and month to identify the individuals. This is the only way I can be more or less sure that I made no mistake.
+
+Example for the year 2008
+
+```{r, message = FALSE, warning = FALSE}
+pt2 %>%
+  map(~ .x %>%
+        filter(PB010 == min(PB010)) %>% # we can identify people from the first year of observation
+        count(PB010, PB030, PB140, PB130, PB150) %>% # keeping identification columns
+        dplyr::select(-n)) %>%
+  keep(~ min(.x$PB010) == 2008) %>% # keep just one file with the lowest year == a
+  bind_rows() %>% 
+  dplyr::select(-1) %>% 
+  head() %>% 
+  kable()
+
+```
+
+Then I simply choose the people from the general file that match the id characteristics with inner_join. Still this does not guarantees us the unique identification, and sometimes there is one or two exact matches but in a completely off time. We know that the individuals are followed for 3 years maximum and everything that is before or beyond this is a mismatch, so i use c(((2008 %% 1000) + 1):((2008 %% 1000) + 3)) (example for 2008) to find people from the adjustment subsequent 3 cohorts only, sine I chose the minimum year. Since we have many files that cover exactly the same period there will be duplicates so I simply use the distinct to remove them.
+
+All good in weights
+
+```{r, message = FALSE, warning = FALSE}
+id <- pt2 %>%
+  map(~ .x %>%
+        filter(PB010 == min(PB010)) %>% # we can identify people from the first year of observation
+        count(PB010, PB030, PB140, PB130, PB150) %>% # keeping identification columns
+        dplyr::select(-n)) %>%
+  keep(~ min(.x$PB010) == 2008) %>% # keep just one file with the lowest year == a
+  bind_rows() %>% 
+  dplyr::select(-1)
+
+health <- pt2 %>% 
+  map(~ .x %>%
+        dplyr::select(PB010, PB100, PB030, PB150, PB050, PH010, PB140, PB130) %>% 
+        inner_join(id)) %>%
+  bind_rows(.id = "cohort") %>%
+  mutate(cohort = parse_number(cohort)) %>%
+  filter(cohort %in% c(((2008 %% 1000) + 1):((2008 %% 1000) + 3))) %>%
+  dplyr::select(-cohort) %>%
+  mutate(PB050 = round(PB050)) %>% ### this one was important. floating error
+  distinct() 
+
+health %>% 
+  group_by(PB010) %>% 
+  summarise(n = sum(PB050)) %>% 
+  kable()
+```
+
+Now, after identifying the individuals we can proceed with the data cleaning.
+
+-   Just in case filter only years more than 2008 (illustrative example)
+
+-   If the info on the month of survey is missing but the data on month of birth is present I put the month of birth
+
+-   If the info on birth is missing but survey month p\[resent input survey month
+
+-   If both missing impute January
+
+-   Rename columns for convenience
+
+-   Transform health states 1:3 - to healthy (Muy bueno, Bueno, Regular)\
+    4:5 - not healthy (malo, muy malo)
+
+-   Combine and Convert month and years to my() format
+
+-   Calculate age in years with lubridate as interval(m_y_birth, m_y_survey) / years(1)
+
+-   Round age to complete years lived.
+
+```{r, message = FALSE, warning = FALSE}
+health1 <- health %>%
+  # just in case
+  filter(PB010 > 2008) %>%
+  # month inmputation part. basically uniform
+  # for survey month data
+  mutate(PB100 = ifelse(is.na(PB100) & !is.na(PB130), PB130, PB100)) %>%
+  # for birth month data
+  mutate(PB130 = ifelse(is.na(PB130) & !is.na(PB100), PB100, PB130)) %>%
+  # is bith are missing
+  mutate(across(c(PB100, PB130), ~ ifelse(is.na(.), 1, .))) %>%  
+  # give columns a name that makes sence 
+  set_names(c("y", "m", "id", "sex", "w", "health", "b_y", "b_m")) %>% 
+  # dichotomize the health outcome
+  mutate(health = case_when(
+    health %in% c(1:3) ~ "H",
+    health %in% c(4:5) ~ "NH",
+    TRUE ~ NA_character_)) %>% 
+  # combine month and year into date column for survey
+  unite("m_y_survey",  c(m, y), sep = "-", remove = FALSE) %>% 
+  # same for birth date
+  unite("m_y_birth",   c(b_m, b_y), sep = "-") %>% 
+  # transform to age format
+  mutate(across(c(m_y_survey, m_y_birth), ~ my(.))) %>%
+  # calculate age in years
+  mutate(age = interval(m_y_birth, m_y_survey) / years(1)) %>%
+  # remove unnecessary columns
+  dplyr::select(-c(m_y_survey, m)) %>% 
+  # make age integer
+  mutate(age = floor(age))
+
+health1 %>% 
+  head() %>% 
+  kable()
+
+```
+
+Why imputation is so complicated. Well, basically to avoid the bias. If any of the month data is present we replace the second missing value with it. Thus, we guarantee the complete year and do not jump forward or backward in years. If both missing we just use beginning of the year guaranteeing the logic.
+
+Now the same procedure should be implemented with the files containing deaths. We keep only people with RB110 == 6 (Situación de la persona en el hogar = Fallecio) then find the corresponding ids from the previous step unite month and year convert to format and calculate age. NOTE: this file has way less missing data but still has some, so I use the same procedure for imputation just in case
+
+```{r, message = FALSE, warning = FALSE}
+dead <-  pt1 %>% 
+  map(~ .x %>%
+        filter(RB110 == 6) %>% # keep only deaths
+        dplyr::select(RB010, RB030, RB070, RB080, RB060, RB090, RB110, RB140,  RB150) %>% 
+        inner_join(
+          set_names(id, c("RB030", "RB080", "RB070", "RB090")))) %>%
+  bind_rows() %>%
+  distinct()
+
+dead1 <- dead %>% 
+  # rename
+  set_names(c("y", "id", "b_m", "b_y", "w", 
+              "sex", "health", "m_d", "y_d")) %>%
+  # choose columns
+  dplyr::select(y, id, b_m, b_y, sex, health, m_d, y_d) %>%
+  # create date of birth
+  unite("m_y_birth",   c(b_m, b_y), sep = "-") %>% 
+  # create date of death
+  unite("m_y_d_or_tr", c(m_d, y_d), sep = "-") %>%
+  # transform to date format
+  mutate(across(c(m_y_birth, m_y_d_or_tr), ~ my(.))) %>% 
+  # calculate age
+  mutate(age = interval(m_y_birth, m_y_d_or_tr) / years(1)) %>% 
+  dplyr::select(-m_y_d_or_tr, health) %>%
+  # create the leath state = Death column
+  mutate(health = "D") %>% 
+  # make integer ages
+  mutate(age = floor(age))
+
+dead1 %>% 
+  head() %>% 
+  kable()
+```
+
+Now I join two data sets and:
+
+1.  Keep only people for which the transitions can be calculated that is if the person is seen in data at least 2 times, 25% of data a re crossectional
+
+2.  If the health is missing i replace it with the closest value up or down
+
+3.  Arrange by age for each individual to grant subsequent observation, use lead() and if the from is D to is D to remove data with missing from states and also with missing weight (these are transition form D to D)
+
+4.  If to is missing but from is present impute from
+
+5.  Create variable period (irrelevant just for my comfort say 2006-2006 - a transition between these 2 time points)
+
+6.  And finally we filter only inner 2 transitions. That is if the data has transitions for 2004 2005 2005 2007, the transitions will be 2004-2005 2005-2006 2006-2007 2007-. The last should obviously be removed, the first one too (don\`t remember why, I think there is something with the data completeness).
+
+    This is it. we have the raw data.
+
+```{r, message = FALSE, warning = FALSE}
+dt <- health1 %>% 
+  # join two datasets
+  full_join(dead1) %>%
+  dplyr::select(-m_y_birth)
+
+new <- dt %>% 
+  group_by(id) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1) %>% 
+  group_by(sex, id) %>%
+  # arrange by age
+  arrange(age) %>%
+  # imput time t + 1 as time t if missing
+  fill(health, .direction = "down") %>% 
+  # do vice versa 
+  fill(health, .direction = "up") %>%
+  # now create to and from states 
+  # for each ID
+  group_by(id) %>% 
+  # arrange by are
+  arrange(age) %>%
+  # create fom variable
+  rename(from = health) %>%
+  # create to variable with lead
+  mutate(to   = lead(from)) %>%
+  ungroup() %>%
+  # final imputation
+  mutate(to = ifelse(from == "D", "D", to)) %>%
+  # remove the people for which we know nothing
+  filter(!is.na(from)) %>%
+  filter(!is.na(w)) %>% # remove transitions from D to D
+  mutate(to = ifelse(is.na(to) & !is.na(from), from, to)) %>% 
+  filter(w > 0) %>% 
+  # create period variable
+  mutate(period = glue("{y}-{y+1}")) %>%
+  # filter only inner 2 transitions
+  filter(str_detect(period, as.character(2008 + 2))) %>% # this is to keep only inner 2 transitions
+  dplyr::select(-n)
+
+new %>% 
+  head() %>% 
+  kable()
+```
+
+\
+Here is the function that simply does all the steps together, but for all cohorts rather than just 2008.
+
+```{r, message = FALSE, warning = FALSE}
+create_data_from_the_chosen_cohort <- function(a) { 
+
+  # so technically 2006 to 2017 but we can start with 2004
+  id <- pt2 %>%
+    map(~ .x %>%
+          filter(PB010 == min(PB010)) %>% # we can identify people from the first year of observation
+          count(PB010, PB030, PB140, PB130, PB150) %>% # keeping identification columns
+          dplyr::select(-n)) %>%
+    keep(~ min(.x$PB010) == a) %>% # keep just one file with the lowest year == a
+    bind_rows() %>% 
+    dplyr::select(-1)
+  
+  # strange that very low weight
+  health <-  pt2 %>% 
+    map(~ .x %>%
+          dplyr::select(PB010, PB100, PB030, PB150, PB050, PH010, PB140, PB130) %>% 
+          inner_join(id)) %>%
+    bind_rows(.id = "cohort") %>%
+    mutate(cohort = parse_number(cohort)) %>%
+    filter(cohort %in% c(((a %% 1000) + 1):((a %% 1000) + 3))) %>%
+    dplyr::select(-cohort) %>%
+    mutate(PB050 = round(PB050)) %>% ### this one was important. floating error
+    distinct()
+  
+health1 <- health %>%
+  # just in case
+  filter(PB010 > a) %>%
+  # month inmputation part. basically uniform
+  # for survey month data
+  mutate(PB100 = ifelse(is.na(PB100) & !is.na(PB130), PB130, PB100)) %>%
+  # for birth month data
+  mutate(PB130 = ifelse(is.na(PB130) & !is.na(PB100), PB100, PB130)) %>%
+  # is bith are missing
+  mutate(across(c(PB100, PB130), ~ ifelse(is.na(.), 1, .))) %>%  
+  # give columns a name that makes sence 
+  set_names(c("y", "m", "id", "sex", "w", "health", "b_y", "b_m")) %>% 
+  # dichotomize the health outcome
+  mutate(health = case_when(
+    health %in% c(1:3) ~ "H",
+    health %in% c(4:5) ~ "NH",
+    TRUE ~ NA_character_)) %>% 
+  # combine month and year into date column for survey
+  unite("m_y_survey",  c(m, y), sep = "-", remove = FALSE) %>% 
+  # same for birth date
+  unite("m_y_birth",   c(b_m, b_y), sep = "-") %>% 
+  # transform to age format
+  mutate(across(c(m_y_survey, m_y_birth), ~ my(.))) %>%
+  # calculate age in years
+  mutate(age = interval(m_y_birth, m_y_survey) / years(1)) %>%
+  # remove unnecessary columns
+  dplyr::select(-c(m_y_survey, m)) %>% 
+  # make age integer
+  mutate(age = floor(age))
+
+# Deaths
+# ----------------------------------------------------------------- #
+dead <-  pt1 %>% 
+  map(~ .x %>%
+        filter(RB110 == 6) %>% # keep only deaths
+        dplyr::select(RB010, RB030, RB070, RB080, RB060, RB090, RB110, RB140,  RB150) %>% 
+        inner_join(
+          set_names(id, c("RB030", "RB080", "RB070", "RB090")))) %>%
+  bind_rows() %>%
+  distinct()
+
+dead1 <- dead %>% 
+  # rename
+  set_names(c("y", "id", "b_m", "b_y", "w", 
+              "sex", "health", "m_d", "y_d")) %>%
+  # choose columns
+  dplyr::select(y, id, b_m, b_y, sex, health, m_d, y_d) %>%
+  # create date of birth
+  unite("m_y_birth",   c(b_m, b_y), sep = "-") %>% 
+  # create date of death
+  unite("m_y_d_or_tr", c(m_d, y_d), sep = "-") %>%
+  # transform to date format
+  mutate(across(c(m_y_birth, m_y_d_or_tr), ~ my(.))) %>% 
+  # calculate age
+  mutate(age = interval(m_y_birth, m_y_d_or_tr) / years(1)) %>% 
+  dplyr::select(-m_y_d_or_tr, health) %>%
+  # create the leath state = Death column
+  mutate(health = "D") %>% 
+  # make integer ages
+  mutate(age = floor(age))
+
+# ----------------------------------------------------------------- #
+dt <- health1 %>% 
+  # join two datasets
+  full_join(dead1) %>%
+  dplyr::select(-m_y_birth)
+
+new <- dt %>% 
+  group_by(id) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1) %>% 
+  group_by(sex, id) %>%
+  # arrange by age
+  arrange(age) %>%
+  # imput time t + 1 as time t if missing
+  fill(health, .direction = "down") %>% 
+  # do vice versa 
+  fill(health, .direction = "up") %>%
+  # now create to and from states 
+  # for each ID
+  group_by(id) %>% 
+  # arrange by are
+  arrange(age) %>%
+  # create fom variable
+  rename(from = health) %>%
+  # create to variable with lead
+  mutate(to   = lead(from)) %>%
+  ungroup() %>%
+  # final imputation
+  mutate(to = ifelse(from == "D", "D", to)) %>%
+  # remove the people for which we know nothing
+  filter(!is.na(from)) %>%
+  filter(!is.na(w)) %>% # remove transitions from D to D
+  mutate(to = ifelse(is.na(to) & !is.na(from), from, to)) %>% 
+  filter(w > 0) %>% 
+  # create period variable
+  mutate(period = glue("{y}-{y+1}")) %>%
+  # filter only inner 2 transitions
+  filter(str_detect(period, as.character(a + 2))) %>% # this is to keep only inner 2 transitions
+  dplyr::select(-n)
+
+return(new)
+
+}
+```
+
+This code chunk simply applies this function to every cohort.
+
+```{r, message = FALSE, warning = FALSE}
+years <- 2004:2017
+x     <- vector(mode = "list", length = length(years)) %>%
+  set_names(str_c('y',  2004:2017))
+
+for(i in 1:length(years)) { 
+  
+  x[[i]] <- create_data_from_the_chosen_cohort(a = years[i])
+  
+}
+```
+
+Finally let me illustrate some examples of how they reassign id\`s.
+
+```{r, message = FALSE, warning = FALSE}
+x %>%
+  bind_rows(.id = "cohort") %>%
+  filter(id == 33210001) %>%
+  kable()
+```
+
+Another one.
+
+```{r, message = FALSE, warning = FALSE}
+x %>%
+  bind_rows(.id = "cohort") %>%
+  filter(id == 71670002) %>%
+  kable()
+```
+
+And another one. This is why we need a combination of variables to unambiguously chose individuals.
+
+```{r, message = FALSE, warning = FALSE}
+x %>%
+  bind_rows(.id = "cohort") %>%
+  filter(id == 2190002) %>%
+  kable()
+```
+
+Next file will start from this point and will include the calculations themselves.

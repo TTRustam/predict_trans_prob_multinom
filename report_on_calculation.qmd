@@ -1,0 +1,689 @@
+---
+title: "Data import, preparaion and cleaning"
+format:
+  html:
+   self-contained: true
+editor: visual
+---
+
+In this report I will use the data generated in the *report_on_data_wrangling* to deal with the challenge.
+
+First simply upload the data.
+
+```{r, warning = FALSE, message = FALSE}
+library(compositions)
+library(kableExtra)
+library(lubridate)
+library(tidyverse)
+library(ggthemes)
+library(magrittr)
+library(splines)
+library(janitor)
+library(splines)
+library(scales)
+library(glue)
+library(nnet)
+
+
+setwd("C:/Users/rusta/OneDrive/trans_prob/Data/unzipped/DATA_RAW/CSV")
+
+load("all_years_data.RData")
+
+```
+
+Here I calculate the transition probabilities. I keep only females for now, for illustration. Next I will also filter one particular cohort (2008) for illustration purposes. Reminder:
+
+1.  We create a new weight column by count(cohort, time, sex, age, from, to).
+
+2.  For each cohort separately we fit the weighted multinational regression with nnet as (to \~ from + age + time, weight = w).
+
+3.  We fit the data for each cohort and sex separately for age, from state, and time.
+
+4.  All the rest is simply some data wrangling and factor re-leveling, so that the base levels are H-H and NH-NH.
+
+```{r, warning = FALSE, message = FALSE, out}
+# Calculate transition probabilities
+tst <- x %>%
+  bind_rows(.id = "cohort") %>% 
+  mutate(cohort = parse_number(cohort)) %>%
+  dplyr::select(-c(period, w), cohort, time = y) %>%
+  mutate(across(c(from, to), ~ as.factor(.))) %>%
+  mutate(from = relevel(from, ref = "H"),
+         to   = relevel(to, ref = "H")) %>%
+  # new weight
+  count(cohort, time, sex, age, from, to) %>% 
+  mutate(sex = ifelse(sex == 1, "male", "female")) %>%
+  filter(sex == "female") %>% # keep only females for now
+  dplyr::select(-sex) %>%
+  group_by(cohort) %>%
+  group_nest() %>%
+  # the model itself
+  mutate(model =  map(data, ~ nnet::multinom(
+    to ~ from + age + time, # 
+    weights = n,
+    data    = .x,
+    trace = FALSE
+  )))
+
+# data for prediction fitting
+new_data <- expand_grid(age   = 17:86,
+                        from   = c("H", "NH"),
+                        time = 2005:2019,   # time measure
+                        cohort = 2004:2017) # cohort measure
+
+# predicted data. all this is to simply fit the new_data for transiton probabilities
+tst <- tst %>%
+  nest_join(new_data, by = "cohort") %>%
+  mutate(predicted_data = map2(.x = model, .y = new_data, ~ predict(.x, .y, type = "probs"))) %>%
+  mutate(finale = map2(.x = new_data, .y = predicted_data, ~ .x %>%
+                         bind_cols(.y))) %>%
+  mutate(qxdata = map(
+    finale,
+    ~ .x %>%
+      pivot_longer(c(H:NH),
+                   names_to  = "var",
+                   values_to = "val") %>%
+      unite("trans", c(from, var), sep = "-") %>%
+      pivot_wider(names_from  = trans,
+                  values_from = val)))
+```
+
+Here we calculate the empirical transition probabilities by first getting the count of transitions as count(cohort, time, sex, age, from, to) and then for each time, age and [from]{.underline} we simply do n / sum(n) for probabilities.
+
+[**NOTE:** From here I show the data only for cohort 2008 for females, for illustration purposes.]{.underline}
+
+```{r, warning = FALSE, message = FALSE}
+empiric <- x %>% 
+  bind_rows(.id = "cohort") %>% 
+  mutate(cohort = parse_number(cohort)) %>%
+  dplyr::select(-c(period, w), cohort, time = y) %>%
+  mutate(across(c(from, to), ~ as.factor(.))) %>%
+  mutate(from = relevel(from, ref = "H"),
+         to   = relevel(to, ref = "H")) %>%
+  # new weight
+  count(cohort, time, sex, age, from, to) %>% 
+  mutate(sex = ifelse(sex == 1, "male", "female")) %>%
+  filter(sex == "female", cohort == 2008) %>% # keep only females for now
+  dplyr::select(-sex, - cohort) %>%
+  group_by(time, age, from) %>% 
+  reframe(to = to,
+          prob_emp = n / sum(n)) %>% 
+  ungroup()
+```
+
+Here is the plot of empiric transition vs fitted for chosen cohort (2008 females). I think it looks ok. What we see is:
+
+1.  Overestimation of H-H for 2009;
+
+2.  Underestimation of transitions to D in generaland
+
+3.  Underestimation of H-NH for 2009.
+
+    But generally transitions look fine.
+
+```{r, warning = FALSE, message = FALSE}
+tst %>% 
+  dplyr::select(cohort, qxdata) %>%
+  unnest(qxdata) %>% 
+  filter(cohort == 2008) %>% 
+  filter(time %in% c(cohort + 1, cohort + 2)) %>% # IMPORTANT
+  pivot_longer(-c(cohort:time),
+               names_to = "trans",
+               values_to = "prob") %>% 
+  dplyr::select(-cohort) %>%
+  separate(trans, into = c("from", "to"), sep = "-") %>%
+  full_join(empiric) %>%
+  ggplot() + 
+  geom_line(aes(x = age, y = prob, group = to, color = to), size = 1) + 
+  geom_point(aes(x = age, y = prob_emp, color = to), size = 1.5) +
+  facet_grid(from ~ time, switch = "y") +
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = seq(15, 85, 5)) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"))
+```
+
+Now we calculate the *l(u)* and *l(h)* and also calculate the full life-table with all the data and R(a) index too.
+
+First come 2 functions then calculations for obtaining survivals and then LT. **NB** you have approved the formulas, but lets check one more time if all is good, I\`m particularly concerned about the L(x) column.
+
+```{r, warning = FALSE, message = FALSE}
+
+lets <- function(.data) { 
+  
+  for(i in 1:length(.data$lu[-1])) { 
+    
+    .data$lh[i + 1] <-
+      .data$lh[i] * .data$`H-H`[i] +
+      .data$lu[i] * .data$`NH-H`[i]
+    
+    .data$lu[i + 1] <-
+      .data$lu[i] * .data$`NH-NH`[i] +
+      .data$lh[i] * .data$`H-NH`[i]
+    
+  }
+
+  return(.data)
+  
+}
+
+# calculate lifetable
+calculate_lt <- function(.data) { 
+  .data %>% 
+    mutate(lx = lu + lh,
+           ax = 0.5,
+           # dx = lx - lead(lx),
+           du = lx * `NH-D`,
+           dh = lx * `H-D`,
+           dx = du + dh,
+           qx = dx / lx,
+           px = 1 - qx
+           # Lx = lx - ax * dx
+           # Lx = (lx + lead(lx)) / 2,
+           # Lx = ifelse(is.na(Lx), lx - ax * dx)
+           ) %>%
+           # Lx = ifelse(is.na(Lx), (lx + (lx * (1 - qx))) / 2, Lx)) %>% 
+    mutate(Lh = (lh + lead(lh)) / 2, # ?
+           Lh = ifelse(is.na(Lh), (lh + (lh * `H-H` + lu * `NH-H`)) / 2, Lh),
+           Lu = (lu + lead(lu)) / 2,
+           Lu = ifelse(is.na(Lu), (lu + (lu * `NH-NH` + lh * `H-NH`)) / 2, Lu),
+           Lx = Lh + Lu # NOTE this one
+           # Lu = Lx - Lh
+           ) %>% # ?
+    mutate(mh = dh / Lh, # Lh
+           mu = du / Lu,
+           mx = dx / Lx) %>% # Lu
+    mutate(Ra = mu / mh) # ?
+}
+
+z <- tst %>%
+  dplyr::select(cohort, qxdata) %>%
+  unnest(qxdata) %>%
+  group_by(cohort) %>% 
+  filter(time %in% c(cohort + 1, cohort + 2)) %>%
+  ungroup() %>% 
+  filter(cohort == 2008) %>%
+  dplyr::select(-cohort) %>% 
+  group_by(time) %>%
+  mutate(lh = 0,
+         lu = 0) %>%
+  mutate(lh = c(1, lh[-1])) %>%
+  group_nest() %>%
+  mutate(dt1 = data) %>%
+  mutate(dt1 = map(dt1, ~ .x %>% 
+                     lets() %>% 
+                     calculate_lt())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(dt1) %>% 
+  ungroup()
+```
+
+Quick check on the LT function if they all look all right.
+
+I think all looks good.
+
+I\`m not sure about the L(x) though. is it OK?
+
+```{r, warning = FALSE, message = FALSE}
+
+lx <- z %>%
+  filter(time == 2009) %>%
+  pull(lx)
+
+dx <- z %>%
+  filter(time == 2009) %>%
+  pull(dx)
+
+qx <- z %>%
+  filter(time == 2009) %>%
+  pull(qx)
+
+px <- z %>%
+  filter(time == 2009) %>%
+  pull(px)
+
+Lx <- z %>%
+  filter(time == 2009) %>%
+  pull(Lx)
+
+log_mx <- z %>%
+  filter(time == 2009) %>%
+  pull(mx) %>%
+  log()
+
+Tx <- z %>%
+  filter(time == 2009) %>%
+  pull(Lx) %>% 
+  rev() %>% 
+  cumsum() %>% 
+  rev()
+
+ex <- Tx / lx
+
+# diagnostic plot
+tibble(lx, dx, qx, px, Lx, log_mx, Tx, ex, age = 17:86) %>% 
+  pivot_longer(-age,
+               names_to  = "measure",
+               values_to = "val") %>% 
+  ggplot(aes(x = age, y = val)) + 
+  geom_line(size = 1) + 
+  geom_point()+
+  facet_wrap(~ measure, scales = "free_y", ncol = 4) + 
+  theme_light() + 
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme(strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"))
+```
+
+Here I show the healthy LE unhealthy LE and overall LE.
+
+Look OK to me.
+
+```{r, warning = FALSE, message = FALSE}
+z %>% 
+  dplyr::select(time, age,  lx, Lx, Lh, lu, lh, Lu) %>%
+  group_by(time) %>% 
+  mutate(Tx = rev(cumsum(rev(Lx)))) %>% 
+  mutate(ex  = Tx / lx,
+         hle = rev(cumsum(rev(Lh))) / lx,
+         ule = rev(cumsum(rev(Lu))) / lx,
+         tst = hle + ule) %>%
+  dplyr::select(time, age, ex, hle, ule) %>% 
+  pivot_longer(-c(time, age),
+               names_to = "measure",
+               values_to = "val") %>% 
+  ggplot() + 
+  geom_line(aes(x = age, y = val, group = measure, color = measure), size = 1) +
+  theme_light() +
+  facet_wrap(~ time)+
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold")
+  )
+
+```
+
+Here prevalence is calculated as the sum of transitions [**from**]{.underline} NH divided by the number of transitions. Is it ok? Basically it is\
+group_by(cohort, sex, time, age, from) %\>%\
+summarise(N = sum(n\[from == "NH"\])\
+Then we model is fit with binomial weighted logit model as glm(prev \~ time + ns(age, knots = 3),) then fit() predict().
+
+```{r, warning = FALSE, message = FALSE}
+# calculate prevalence
+prev <- x %>% 
+  bind_rows(.id = "cohort") %>% 
+  mutate(cohort = parse_number(cohort)) %>%
+  dplyr::select(-c(period, w), cohort, time = y) %>%
+  mutate(across(c(from, to), ~ as.factor(.))) %>%
+  mutate(from = relevel(from, ref = "H"),
+         to   = relevel(to, ref = "H")) %>%
+  # new weight
+  count(cohort, time, sex, age, from) %>% # meassurwe of time
+  group_by(cohort, sex, time, age, from) %>% # 
+  summarise(N = sum(n[from == "NH"]), # empirical prevalence
+            n = sum(n)) %>%
+  mutate(prev = N / n) %>% 
+  ungroup() %>% 
+  mutate(sex = ifelse(sex == 1, "male", "female")) %>% 
+  filter(sex == "female") %>% 
+  dplyr::select(-sex) %>% 
+  # mutate(case = ifelse(to == "NH", 1, 0)) %>% 
+  group_by(cohort) %>% 
+  group_nest() %>% 
+  mutate(model =  map(data, ~ glm( # model prevalence add spline????
+    prev ~ time + ns(age, knots = 3), # ???
+    weights = n,
+    family = binomial(link = "logit"),
+    data    = .x
+  ))) %>% 
+  mutate(results = map(model, ~ fitted.values(.x)))
+
+new_data <- expand_grid(age   = 17:86,
+                        time = 2005:2019,
+                        cohort = 2004:2017)
+
+# predict prevalence
+prev <- prev %>%
+  nest_join(new_data) %>% 
+  mutate(predicted_data = map2(.x = model, .y = new_data, ~ predict(.x, .y, type = "response"))) %>%
+  mutate(finale = map2(.x = new_data, .y = predicted_data, ~ .x %>%
+                         bind_cols(.y) %>% 
+                         set_names(c(names(.)[c(1:2)], "case"))))
+```
+
+Here I compare the empirical and fitted prevalence. Looks good to me. I do not see any significant mistakes
+
+```{r, warning = FALSE, message = FALSE}
+# looks of prev
+mod_prev <- prev %>%
+  dplyr::select(cohort, finale) %>% 
+  unnest(finale) %>%
+  group_by(cohort) %>%
+  filter(time %in% c(cohort + 1, cohort + 2)) %>%
+  ungroup() %>% 
+  filter(cohort == 2008) %>% 
+  dplyr::select(-cohort) %>% 
+  # filter(cohort == 2010) %>% \
+  mutate(time = factor(time)) %>% 
+  rename(mod_prev = case)
+
+emp_prev <- x %>% 
+  bind_rows(.id = "cohort") %>% 
+  mutate(cohort = parse_number(cohort)) %>%
+  dplyr::select(-c(period, w), cohort, time = y) %>%
+  mutate(across(c(from, to), ~ as.factor(.))) %>%
+  mutate(from = relevel(from, ref = "H"),
+         to   = relevel(to, ref = "H")) %>%
+  # new weight
+  count(cohort, time, sex, age, from) %>% # meassurwe of time
+  group_by(cohort, sex, time, age) %>% # 
+  summarise(N = sum(n[from == "NH"]), # empirical prevalence
+            n = sum(n)) %>%
+  mutate(emp_prev = N / n) %>% 
+  ungroup() %>% 
+  mutate(sex = ifelse(sex == 1, "male", "female")) %>% 
+  filter(sex == "female", cohort == 2008) %>% 
+  dplyr::select(-sex, -cohort) %>%  
+  mutate(time = factor(time)) %>% 
+  dplyr::select(time, age, emp_prev)
+
+mod_prev %>% 
+  full_join(emp_prev) %>%
+  ggplot() + 
+  geom_line(aes(x = age,  y = mod_prev)) +
+  geom_point(aes(x = age, y = emp_prev), color = "grey") +
+  facet_wrap(~ time) +
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold"))
+```
+
+Download HMD data and prepare everything for calculation of *mh(x)* and *mu(x)*.
+
+```{r, warning = FALSE, message = FALSE}
+prev_test <- prev %>% 
+  filter(cohort == 2008) %>% 
+  dplyr::select(cohort, finale) %>% 
+  unnest(finale) %>% 
+  filter(time %in% c(cohort + 1, cohort + 2))
+
+# Ra
+Ra <- z %>% 
+  dplyr::select(time, age, Ra, starts_with("m"), ends_with("D"))
+
+
+setwd("C:/R_initial_directory/test_,ultinom")
+
+# read and filter hmd female data
+hmd <- read_table("fltper_1x1.txt", skip = 1) %>% 
+  dplyr::select(time = Year, age = Age, mx_hmd = mx) %>%
+  mutate(age = parse_number(age)) %>% 
+  filter(time %in% unique(prev_test$time),
+         age %in% prev_test$age) 
+```
+
+Here is the result of old *mh(x)*, *mu(x)* and new. I use formula 5 from the PAA abstract to calculate the new set of m(x). I dont like this plot, technically (and it future this assumption) holds the values should be higher for the corrected *m(x)* but here they are lower.
+
+```{r, warning = FALSE, message = FALSE}
+Ra %>% 
+  full_join(prev_test) %>% 
+  full_join(hmd) %>%
+  mutate(mh_new = mx_hmd / (1 - case + case * Ra), # formula 5
+         mu_new = mh_new * Ra) %>% # formula 4
+  dplyr::select(time, age, mh_old = mh, mu_old = mu, mh_new, mu_new) %>% 
+  pivot_longer(-c(time, age),
+               names_to  = "variable",
+               values_to = "val") %>%
+  separate(variable, c("indicator", "old_new")) %>%  
+  ggplot(aes(x = age, y = val, group = old_new, color = old_new)) + 
+  geom_line() + 
+  scale_y_log10()+
+  facet_grid(time ~ indicator, switch = "y") + 
+  theme_bw() + 
+  theme(axis.title.y = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside")
+```
+
+Lets recalculate the transition based on the newly acquired transitions to death. I use your method that you have shown me at one of he calls. The *recalculate* function does it all.
+
+```{r, warning = FALSE, message = FALSE}
+new_mx <- Ra %>% 
+  full_join(prev_test) %>% 
+  full_join(hmd) %>%
+  mutate(mh_new = mx_hmd / (1 - case + case * Ra), # formula 5
+         mu_new = mh_new * Ra) %>% # formula 4
+  dplyr::select(time, age, `H-D` = mh_new, `NH-D` = mu_new)
+
+
+recalculate <- function(x) { 
+  
+  x[1:2] <- x[1:2] / sum(x[1:2]) * (1 - x[3])
+  
+  return(x)
+  
+}
+
+old_trns <- tst %>% 
+  dplyr::select(cohort, qxdata) %>%
+  unnest(qxdata) %>% 
+  filter(cohort == 2008) %>% 
+  filter(time %in% c(cohort + 1, cohort + 2)) %>% 
+  dplyr::select(-cohort, -`H-D`, -`NH-D`)
+
+new_trans <- old_trns %>% 
+  full_join(new_mx) %>% 
+  pivot_longer(-c(age, time),
+               names_to  = "var",
+               values_to = "val") %>% 
+  separate(var, c("from", "to"), sep = "-") %>% 
+  group_nest(time, age, from) %>% 
+  mutate(data = map(data, ~ .x %>% 
+                      mutate(val = recalculate(val)))) %>% 
+  unnest(data) %>%
+  mutate(type = "Adjusted")%>% 
+  ungroup()
+
+
+old_plot <- tst %>% 
+  dplyr::select(cohort, qxdata) %>%
+  unnest(qxdata) %>% 
+  filter(cohort == 2008) %>% 
+  filter(time %in% c(cohort + 1, cohort + 2)) %>% 
+  dplyr::select(-cohort) %>%
+  pivot_longer(-c(age, time),
+             names_to  = "var",
+             values_to = "val") %>% 
+  separate(var, c("from", "to"), sep = "-") %>%
+  mutate(type = "Raw")%>% 
+  ungroup()
+
+full_trns <- new_trans %>% 
+  full_join(old_plot)
+
+```
+
+Here is the plot of adjusted vs. raw transitions is shown. What we can see is that the adjusted are increasing the probability of transitions to deaths while decreasing all others. Especially for transitions from NH. This is exactly what we wanted. Looks logical to me.
+
+```{r, warning = FALSE, message = FALSE}
+full_trns %>% 
+  ggplot() + 
+  geom_line(aes(x = age, y = val, color = to, lty = type), size = 1) +
+  facet_wrap(from ~ time) + 
+  theme_light() + 
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme(legend.position = "bottom",
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold"))
+```
+
+Finally we recalculate the HLE ULE and etc. and check how they changed.
+
+```{r, warning = FALSE, message = FALSE}
+z1 <- new_trans %>% 
+  dplyr::select(-type) %>% 
+  unite("var", from, to, sep = "-") %>% 
+  pivot_wider(names_from = var,
+              values_from = val) %>% 
+  group_by(time) %>%
+  mutate(lh = 0,
+         lu = 0) %>%
+  mutate(lh = c(1, lh[-1])) %>%
+  group_nest() %>%
+  mutate(dt1 = data) %>%
+  mutate(dt1 = map(dt1, ~ .x %>% 
+                     lets() %>% 
+                     calculate_lt())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(dt1) %>% 
+  ungroup()
+
+new_measures <- z1 %>% 
+  dplyr::select(time, age,  lx, Lx, Lh, lu, lh, Lu) %>%
+  group_by(time) %>% 
+  mutate(Tx = rev(cumsum(rev(Lx)))) %>% 
+  mutate(ex  = Tx / lx,
+         hle = rev(cumsum(rev(Lh))) / lx,
+         ule = rev(cumsum(rev(Lu))) / lx,
+         tst = hle + ule) %>%
+  dplyr::select(time, age, ex, hle, ule) %>% 
+  pivot_longer(-c(time, age),
+               names_to = "measure",
+               values_to = "val") %>% 
+  mutate(type = "New")
+
+old_measures <- z %>% 
+  dplyr::select(time, age,  lx, Lx, Lh, lu, lh, Lu) %>%
+  group_by(time) %>% 
+  mutate(Tx = rev(cumsum(rev(Lx)))) %>% 
+  mutate(ex  = Tx / lx,
+         hle = rev(cumsum(rev(Lh))) / lx,
+         ule = rev(cumsum(rev(Lu))) / lx,
+         tst = hle + ule) %>%
+  dplyr::select(time, age, ex, hle, ule) %>% 
+  pivot_longer(-c(time, age),
+               names_to = "measure",
+               values_to = "val") %>% 
+  mutate(type = "Old")
+```
+
+Now everything is lower for adjusted. especially the NH transitions.
+
+```{r, warning = FALSE, message = FALSE}
+new_measures %>% 
+  full_join(old_measures) %>% 
+  ggplot() + 
+  geom_line(aes(x = age, y = val, color = measure, lty = type), size = 1) +
+  theme_light() +
+  facet_wrap(~ time)+
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold")
+  )
+```
+
+Here is the plot of difference in years for RAW and adjusted LE measures.
+
+```{r, warning = FALSE, message = FALSE}
+new_measures %>% 
+  full_join(old_measures) %>% 
+  pivot_wider(names_from = type,
+              values_from = val
+              ) %>% 
+  mutate(diff = Old - New) %>%
+  ggplot() + 
+  geom_line(aes(x = age, y = diff, color = measure), size = 1) +
+  facet_wrap(~ time)+
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold"))
+```
+
+Lastly lets check our LE with HMD LE. Both the raw and adjusted e(x) are lower than HMD. Adjusted is even lower than raw.
+
+```{r, warning = FALSE, message = FALSE}
+hmdex <- read_table("fltper_1x1.txt", skip = 1) %>% 
+  filter(Year %in% c(2009, 2010), Age %in% c(17:86)) %>% 
+  dplyr::select(time = Year, age = Age, ex_hmd = ex) %>% 
+  mutate(age = as.numeric(age))
+
+ex_new <- new_measures %>% 
+  filter(measure == "ex") %>%
+  dplyr::select(-type, -measure) %>% 
+  rename(ex_new = val)
+
+ex_old <- 
+  old_measures %>% 
+  filter(measure == "ex") %>%
+  dplyr::select(-type, -measure) %>% 
+  rename(ex_old = val)
+
+
+hmdex %>% 
+  full_join(ex_new) %>%
+  full_join(ex_old)  %>% 
+  pivot_longer(-c(time, age),
+               names_to = "measure",
+               values_to = "val") %>% 
+  ggplot(aes(x = age, y = val, group = measure, color = measure)) + 
+  geom_line(size = 1) + 
+  facet_wrap(~ time) + 
+  scale_y_continuous(breaks = pretty_breaks())+
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_light() + 
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black", face = "bold"),
+        axis.title.y = element_blank(),
+        legend.title = element_text(color = "black", face = "bold"),
+        legend.text = element_text(color = "black", face = "bold"))
+```
+
+The difference between HMD LE and our can be significant. Our models underestimate mortality especially in old ages. BUT this is to be expected and is well known problem of panel data selectivity in general and SILC in particular. When they miss very sick people and also people from the administrative units like primary healthcare facilities and etc.\
+So I say the results are logical.
+
+```{r, warning = FALSE, message = FALSE}
+hmdex %>% 
+  full_join(ex_new) %>% 
+  mutate(diff = ex_hmd - ex_new) %>% 
+  ggplot(aes(x = age, y = diff)) +
+  facet_wrap(~ time)+
+  geom_line()
+```
+
+This is it. If the results look logical to you, I can easily add males and all other cohorts and we are ready to write the paper on corresponding results.
